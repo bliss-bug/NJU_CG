@@ -40,6 +40,8 @@ class MyCanvas(QGraphicsView):
         self.temp_id = ''
         self.temp_item = None
         self.color = QColor(0,0,0)
+        self.pre_pos = None
+        self.pre_list = []
 
     def start_draw_line(self, algorithm, item_id):
         self.status = 'line'
@@ -63,6 +65,9 @@ class MyCanvas(QGraphicsView):
     def finish_draw(self,flag=False):
         self.temp_id = self.main_window.get_id(flag)
         self.temp_item = None
+
+    def start_translate(self):
+        self.status = 'translate'
 
     def clear_selection(self):
         if self.selected_id != '':
@@ -105,6 +110,12 @@ class MyCanvas(QGraphicsView):
                 else:
                     self.temp_item.p_list.append([x, y])
             self.main_window.changed=True
+        elif self.status == 'translate':
+            if self.selected_id != '':
+                self.temp_item = self.item_dict[self.selected_id]
+                self.pre_pos = pos
+                self.pre_list = self.temp_item.p_list
+                self.main_window.changed=True
 
         self.updateScene([self.sceneRect()])
         super().mousePressEvent(event)
@@ -115,6 +126,10 @@ class MyCanvas(QGraphicsView):
         y = int(pos.y())
         if self.status == 'line' or self.status == 'ellipse':
             self.temp_item.p_list[1] = [x, y]
+        elif self.status == 'translate':
+            if self.selected_id != '':
+                dx,dy=x-int(self.pre_pos.x()),y-int(self.pre_pos.y())
+                self.temp_item.p_list = alg.translate(self.pre_list,dx,dy)
         self.updateScene([self.sceneRect()])
         super().mouseMoveEvent(event)
 
@@ -282,6 +297,8 @@ class MainWindow(QMainWindow):
         curve_bezier_act.triggered.connect(self.curve_bezier_action) #curve
         curve_b_spline_act.triggered.connect(self.curve_b_spline_action)
 
+        translate_act.triggered.connect(self.translate_action)
+
         self.list_widget.currentTextChanged.connect(self.canvas_widget.selection_changed)
 
         # 设置主窗口的布局
@@ -307,6 +324,7 @@ class MainWindow(QMainWindow):
             self.canvas_widget.color=color
 
     def myquit(self):
+        self.check()
         if self.changed:
             reply = QMessageBox.question(self, 'Message',
                 "Do you want to save your work?", QMessageBox.Yes | 
@@ -417,6 +435,11 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage('绘制B-spline曲线')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
+
+    def translate_action(self):
+        self.check()
+        self.canvas_widget.start_translate()
+        self.statusBar().showMessage('平移图元')
 
 
 if __name__ == '__main__':
