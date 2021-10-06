@@ -295,6 +295,12 @@ class MainWindow(QMainWindow):
         self.resize(1800, 1400)
         self.setWindowTitle('zjh\'s CG')
 
+    def check(self):
+        if self.canvas_widget.status == 'polygon' or self.canvas_widget.status == 'curve':
+            self.canvas_widget.item_dict[self.canvas_widget.temp_id]=self.canvas_widget.temp_item
+            self.canvas_widget.list_widget.addItem(self.canvas_widget.temp_id)
+            self.canvas_widget.finish_draw()
+
     def set_pen_action(self):
         color=QColorDialog.getColor()
         if color.isValid():
@@ -315,10 +321,7 @@ class MainWindow(QMainWindow):
             qApp.quit()
 
     def save_canvas_action(self):
-        if self.canvas_widget.status == 'polygon' or self.canvas_widget.status == 'curve':
-            self.canvas_widget.item_dict[self.canvas_widget.temp_id]=self.canvas_widget.temp_item
-            self.canvas_widget.list_widget.addItem(self.canvas_widget.temp_id)
-            self.canvas_widget.finish_draw()
+        self.check()
         path = QFileDialog.getSaveFileName(caption='保存画布', filter='BMP图像 (*.bmp)')
         if path!='':
             canvas = np.zeros([self.height, self.length, 3], np.uint8)
@@ -339,6 +342,7 @@ class MainWindow(QMainWindow):
             self.changed=False
 
     def reset_canvas_action(self):
+        self.check()
         self.length,_ = QInputDialog.getInt(self,'input','length',1000,500,2000)
         self.height,_ = QInputDialog.getInt(self,'input','height',800,300,1500)
         self.list_widget.clearSelection()
@@ -359,80 +363,56 @@ class MainWindow(QMainWindow):
         return _id
 
     def line_naive_action(self):
-        if self.canvas_widget.status == 'polygon' or self.canvas_widget.status == 'curve':
-            self.canvas_widget.item_dict[self.canvas_widget.temp_id]=self.canvas_widget.temp_item
-            self.canvas_widget.list_widget.addItem(self.canvas_widget.temp_id)
-            self.canvas_widget.finish_draw()
+        self.check()
         self.canvas_widget.start_draw_line('Naive', self.get_id())
         self.statusBar().showMessage('Naive算法绘制线段')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
     def line_DDA_action(self):
-        if self.canvas_widget.status == 'polygon' or self.canvas_widget.status == 'curve':
-            self.canvas_widget.item_dict[self.canvas_widget.temp_id]=self.canvas_widget.temp_item
-            self.canvas_widget.list_widget.addItem(self.canvas_widget.temp_id)
-            self.canvas_widget.finish_draw()
+        self.check()
         self.canvas_widget.start_draw_line('DDA', self.get_id())
         self.statusBar().showMessage('DDA算法绘制线段')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
     
     def line_bresenham_action(self):
-        if self.canvas_widget.status == 'polygon' or self.canvas_widget.status == 'curve':
-            self.canvas_widget.item_dict[self.canvas_widget.temp_id]=self.canvas_widget.temp_item
-            self.canvas_widget.list_widget.addItem(self.canvas_widget.temp_id)
-            self.canvas_widget.finish_draw()
+        self.check()
         self.canvas_widget.start_draw_line('Bresenham', self.get_id())
         self.statusBar().showMessage('Bresenham算法绘制线段')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
     
     def polygon_DDA_action(self):
-        if self.canvas_widget.status == 'polygon' or self.canvas_widget.status == 'curve':
-            self.canvas_widget.item_dict[self.canvas_widget.temp_id]=self.canvas_widget.temp_item
-            self.canvas_widget.list_widget.addItem(self.canvas_widget.temp_id)
-            self.canvas_widget.finish_draw()
+        self.check()
         self.canvas_widget.start_draw_polygon('DDA', self.get_id())
         self.statusBar().showMessage('DDA算法绘制多边形')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
     def polygon_bresenham_action(self):
-        if self.canvas_widget.status == 'polygon' or self.canvas_widget.status == 'curve':
-            self.canvas_widget.item_dict[self.canvas_widget.temp_id]=self.canvas_widget.temp_item
-            self.canvas_widget.list_widget.addItem(self.canvas_widget.temp_id)
-            self.canvas_widget.finish_draw()
+        self.check()
         self.canvas_widget.start_draw_polygon('Bresenham', self.get_id())
         self.statusBar().showMessage('Bresenham算法绘制多边形')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
     def ellipse_action(self):
-        if self.canvas_widget.status == 'polygon' or self.canvas_widget.status == 'curve':
-            self.canvas_widget.item_dict[self.canvas_widget.temp_id]=self.canvas_widget.temp_item
-            self.canvas_widget.list_widget.addItem(self.canvas_widget.temp_id)
-            self.canvas_widget.finish_draw()
+        self.check()
         self.canvas_widget.start_draw_ellipse(self.get_id())
         self.statusBar().showMessage('绘制椭圆')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
     def curve_bezier_action(self):
-        if self.canvas_widget.status == 'polygon' or self.canvas_widget.status == 'curve':
-            self.canvas_widget.item_dict[self.canvas_widget.temp_id]=self.canvas_widget.temp_item
-            self.canvas_widget.list_widget.addItem(self.canvas_widget.temp_id)
-            self.canvas_widget.finish_draw()
+        self.check()
         self.canvas_widget.start_draw_curve('Bezier',self.get_id())
         self.statusBar().showMessage('绘制Bezier曲线')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
     def curve_b_spline_action(self):
-        if self.canvas_widget.status == 'polygon' or self.canvas_widget.status == 'curve':
-            self.canvas_widget.item_dict[self.canvas_widget.temp_id]=self.canvas_widget.temp_item
-            self.canvas_widget.list_widget.addItem(self.canvas_widget.temp_id)
-            self.canvas_widget.finish_draw()
+        self.check()
         self.canvas_widget.start_draw_curve('B-spline',self.get_id())
         self.statusBar().showMessage('绘制B-spline曲线')
         self.list_widget.clearSelection()
