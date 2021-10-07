@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPainter, QMouseEvent, QColor
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
 import math
 import numpy as np
 from PIL import Image
@@ -43,6 +44,7 @@ class MyCanvas(QGraphicsView):
         self.pre_pos = None
         self.pre_list = []
         self.center = None
+        self.bound = None
 
     def start_draw_line(self, algorithm, item_id):
         self.status = 'line'
@@ -64,9 +66,10 @@ class MyCanvas(QGraphicsView):
         self.temp_id = item_id
 
     def finish_draw(self,flag=False):
-        self.temp_id = self.main_window.get_id(flag)
-        self.temp_item = None
-        self.center = None
+        if self.temp_item is not None:
+            self.temp_id = self.main_window.get_id(flag)
+            self.temp_item = None
+            self.center = None
 
     def start_translate(self):
         self.status = 'translate'
@@ -85,6 +88,7 @@ class MyCanvas(QGraphicsView):
         if self.selected_id != '':
             self.item_dict[self.selected_id].selected = False
             self.selected_id = ''
+            self.temp_item = None
 
     def selection_changed(self, selected):
         self.main_window.check()
@@ -184,6 +188,17 @@ class MyCanvas(QGraphicsView):
                 if len1!=0:
                     s=len2/len1
                     self.temp_item.p_list=alg.scale(self.pre_list,self.center[0],self.center[1],s)
+        elif self.status == 'clip':
+            if self.selected_id != '' and self.temp_item.item_type == 'line':
+                pre_x,pre_y=int(self.pre_pos.x()),int(self.pre_pos.y())
+                x_min,x_max = min(pre_x,x),max(pre_x,x)
+                y_min,y_max = min(pre_y,y),max(pre_y,y)
+                if self.bound is None:
+                    self.bound = QGraphicsRectItem(x_min-1, y_min-1, x_max-x_min+2, y_max-y_min+2)
+                    self.bound.setPen(Qt.magenta)
+                    self.scene().addItem(self.bound)
+                else:
+                    self.bound.setRect(x_min-1, y_min-1, x_max-x_min+2, y_max-y_min+2)
         self.updateScene([self.sceneRect()])
         super().mouseMoveEvent(event)
 
@@ -192,12 +207,38 @@ class MyCanvas(QGraphicsView):
             self.item_dict[self.temp_id] = self.temp_item
             self.list_widget.addItem(self.temp_id)
             self.finish_draw()
+        elif self.status == 'clip':
+            pos = self.mapToScene(event.localPos().toPoint())
+            x = int(pos.x())
+            y = int(pos.y())
+            if self.selected_id != '' and self.temp_item.item_type == 'line':
+                pre_x,pre_y=int(self.pre_pos.x()),int(self.pre_pos.y())
+                x_min,x_max = min(pre_x,x),max(pre_x,x)
+                y_min,y_max = min(pre_y,y),max(pre_y,y)
+                t_list = alg.clip(self.pre_list,x_min,y_min,x_max,y_max,self.temp_algorithm)
+                if t_list != []:
+                    self.temp_item.p_list = t_list
+                else:
+                    number = self.list_widget.findItems(self.selected_id, Qt.MatchContains)
+                    row = self.list_widget.row(number[0])
+                    temp_id = self.selected_id
+                    temp_item=self.temp_item
+                    self.clear_selection()
+                    self.list_widget.clearSelection()
+                    self.scene().removeItem(temp_item)
+                    del self.item_dict[temp_id]
+                    self.list_widget.takeItem(row)
+                if self.bound is not None:
+                    self.scene().removeItem(self.bound)
+                    self.bound = None
+                    self.updateScene([self.sceneRect()])
         '''
         elif self.status == 'polygon' or self.status == 'curve':
             self.item_dict[self.temp_id] = self.temp_item
             if not self.list_widget.findItems(self.temp_id, Qt.MatchContains):
                 self.list_widget.addItem(self.temp_id)
         '''
+
         super().mouseReleaseEvent(event)
 
 
@@ -377,12 +418,12 @@ class MainWindow(QMainWindow):
 
     def check(self):
         if self.canvas_widget.status == 'polygon' or self.canvas_widget.status == 'curve':
-            self.canvas_widget.item_dict[self.canvas_widget.temp_id]=self.canvas_widget.temp_item
-            self.canvas_widget.list_widget.addItem(self.canvas_widget.temp_id)
             if self.canvas_widget.temp_item is not None:
+                self.canvas_widget.item_dict[self.canvas_widget.temp_id]=self.canvas_widget.temp_item
+                self.canvas_widget.list_widget.addItem(self.canvas_widget.temp_id)
                 self.canvas_widget.finish_draw()
-            else:
-                self.canvas_widget.finish_draw(True)
+            #else:
+             #   self.canvas_widget.finish_draw(True)
 
     def set_pen_action(self):
         color=QColorDialog.getColor()
@@ -395,7 +436,6 @@ class MainWindow(QMainWindow):
             reply = QMessageBox.question(self, 'Message',
                 "Do you want to save your work?", QMessageBox.Yes | 
                 QMessageBox.No | QMessageBox.Cancel, QMessageBox.Yes)
-    
             if reply == QMessageBox.Yes:
                 self.save_canvas_action()
                 qApp.quit()
@@ -403,6 +443,22 @@ class MainWindow(QMainWindow):
                 qApp.quit()
         else:
             qApp.quit()
+
+    def closeEvent(self,a: QCloseEvent):
+        self.check()
+        if self.changed:
+            reply = QMessageBox.question(self, 'Message',
+                "Do you want to save your work?", QMessageBox.Yes | 
+                QMessageBox.No | QMessageBox.Cancel, QMessageBox.Yes)
+            if reply == QMessageBox.Yes:
+                self.save_canvas_action()
+                a.accept()
+            elif reply == QMessageBox.No:
+                a.accept()
+            else:
+                a.ignore()
+        else:
+            a.accept()
 
     def save_canvas_action(self):
         self.check()
@@ -422,8 +478,9 @@ class MainWindow(QMainWindow):
                 for x, y in pixels:
                     color=np.zeros(3, np.uint8)
                     canvas[y, x] = color
-            Image.fromarray(canvas).save(path[0], 'bmp')
-            self.changed=False
+            if path[0] != '':
+                Image.fromarray(canvas).save(path[0], 'bmp')
+                self.changed=False
 
     def reset_canvas_action(self):
         self.check()
