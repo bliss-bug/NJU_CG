@@ -191,6 +191,8 @@ class MyCanvas(QGraphicsView):
         y = int(pos.y())
         if self.status == 'line' or self.status == 'ellipse':
             self.temp_item.p_list[1] = [x, y]
+        elif self.status == 'polygon' or self.status == 'curve':
+            self.temp_item.p_list[len(self.temp_item.p_list)-1] = [x, y]
         elif self.status == 'pen':
             self.temp_item.p_list.append([x, y])
         elif self.status == 'translate':
