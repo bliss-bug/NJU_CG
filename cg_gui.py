@@ -65,6 +65,10 @@ class MyCanvas(QGraphicsView):
         self.temp_algorithm = algorithm
         self.temp_id = item_id
 
+    def start_free_draw(self,item_id):
+        self.status = 'pen'
+        self.temp_id = item_id
+
     def finish_draw(self,flag=False):
         if self.temp_item is not None:
             self.temp_id = self.main_window.get_id(flag)
@@ -84,6 +88,20 @@ class MyCanvas(QGraphicsView):
         self.status = 'clip'
         self.temp_algorithm = algorithm
 
+    def start_delete(self):
+        if self.selected_id != '':
+            number = self.list_widget.findItems(self.selected_id, Qt.MatchContains)
+            row = self.list_widget.row(number[0])
+            temp_id = self.selected_id
+            temp_item = self.item_dict[temp_id]
+            self.clear_selection()
+            self.list_widget.clearSelection()
+            self.scene().removeItem(temp_item)
+            del self.item_dict[temp_id]
+            self.list_widget.takeItem(row)
+            self.updateScene([self.sceneRect()])
+            self.main_window.changed = True
+
     def clear_selection(self):
         if self.selected_id != '':
             self.item_dict[self.selected_id].selected = False
@@ -97,8 +115,9 @@ class MyCanvas(QGraphicsView):
             self.item_dict[self.selected_id].selected = False
             self.item_dict[self.selected_id].update()
         self.selected_id = selected
-        self.item_dict[selected].selected = True
-        self.item_dict[selected].update()
+        if selected != '':
+            self.item_dict[selected].selected = True
+            self.item_dict[selected].update()
         self.status = ''
         self.updateScene([self.sceneRect()])
 
@@ -127,6 +146,10 @@ class MyCanvas(QGraphicsView):
                     self.status = ''
                 else:
                     self.temp_item.p_list.append([x, y])
+            self.main_window.changed=True
+        elif self.status == 'pen':
+            self.temp_item = MyItem(self.temp_id, self.status, [[x, y]], color=self.color)
+            self.scene().addItem(self.temp_item)
             self.main_window.changed=True
         elif self.status == 'translate':
             if self.selected_id != '':
@@ -168,6 +191,8 @@ class MyCanvas(QGraphicsView):
         y = int(pos.y())
         if self.status == 'line' or self.status == 'ellipse':
             self.temp_item.p_list[1] = [x, y]
+        elif self.status == 'pen':
+            self.temp_item.p_list.append([x, y])
         elif self.status == 'translate':
             if self.selected_id != '':
                 dx,dy=x-int(self.pre_pos.x()),y-int(self.pre_pos.y())
@@ -203,7 +228,7 @@ class MyCanvas(QGraphicsView):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if self.status == 'line' or self.status == 'ellipse':
+        if self.status == 'line' or self.status == 'ellipse' or self.status == 'pen':
             self.item_dict[self.temp_id] = self.temp_item
             self.list_widget.addItem(self.temp_id)
             self.finish_draw()
@@ -231,7 +256,7 @@ class MyCanvas(QGraphicsView):
                 if self.bound is not None:
                     self.scene().removeItem(self.bound)
                     self.bound = None
-                    self.updateScene([self.sceneRect()])
+                self.updateScene([self.sceneRect()])
         '''
         elif self.status == 'polygon' or self.status == 'curve':
             self.item_dict[self.temp_id] = self.temp_item
@@ -303,6 +328,13 @@ class MyItem(QGraphicsItem):
                 painter.setPen(QColor(255, 0, 0))
                 painter.drawRect(self.boundingRect())
 
+        elif self.item_type == 'pen':
+            for p in self.p_list:
+                painter.drawPoint(*p)
+            if self.selected:
+                painter.setPen(QColor(255, 0, 0))
+                painter.drawRect(self.boundingRect())
+
     def boundingRect(self) -> QRectF:
         if self.item_type == 'line' or self.item_type == 'ellipse':
             x0, y0 = self.p_list[0]
@@ -312,7 +344,7 @@ class MyItem(QGraphicsItem):
             w = max(x0, x1) - x
             h = max(y0, y1) - y
             return QRectF(x - 1, y - 1, w + 2, h + 2)
-        elif self.item_type == 'polygon' or self.item_type == 'curve':
+        elif self.item_type == 'polygon' or self.item_type == 'curve' or self.item_type == 'pen':
             #pass
             x_min,y_min=self.p_list[0]
             x_max,y_max=self.p_list[0]
@@ -367,6 +399,7 @@ class MainWindow(QMainWindow):
         curve_menu = draw_menu.addMenu('曲线')
         curve_bezier_act = curve_menu.addAction('Bezier')
         curve_b_spline_act = curve_menu.addAction('B-spline')
+        pen_act = draw_menu.addAction('画笔')
         edit_menu = menubar.addMenu('编辑')
         translate_act = edit_menu.addAction('平移')
         rotate_act = edit_menu.addAction('旋转')
@@ -374,6 +407,7 @@ class MainWindow(QMainWindow):
         clip_menu = edit_menu.addMenu('裁剪')
         clip_cohen_sutherland_act = clip_menu.addAction('Cohen-Sutherland')
         clip_liang_barsky_act = clip_menu.addAction('Liang-Barsky')
+        delete_act = edit_menu.addAction('删除')
 
         # 连接信号和槽函数
         set_pen_act.triggered.connect(self.set_pen_action)
@@ -396,12 +430,17 @@ class MainWindow(QMainWindow):
         curve_bezier_act.triggered.connect(self.curve_bezier_action) #curve
         curve_b_spline_act.triggered.connect(self.curve_b_spline_action)
 
+        pen_act.triggered.connect(self.pen_action)
+
         translate_act.triggered.connect(self.translate_action) #translate
         rotate_act.triggered.connect(self.rotate_action) #rotate
         scale_act.triggered.connect(self.scale_action) #scale
 
         clip_cohen_sutherland_act.triggered.connect(self.clip_cohen_sutherland_action) #clip
         clip_liang_barsky_act.triggered.connect(self.clip_liang_barsky_action)
+
+        delete_act.triggered.connect(self.delete_action)
+        delete_act.setShortcut('Shift+Del')
 
         self.list_widget.currentTextChanged.connect(self.canvas_widget.selection_changed)
 
@@ -559,6 +598,13 @@ class MainWindow(QMainWindow):
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
+    def pen_action(self):
+        self.check()
+        self.canvas_widget.start_free_draw(self.get_id())
+        self.statusBar().showMessage('画笔绘图')
+        self.list_widget.clearSelection()
+        self.canvas_widget.clear_selection()
+
     def translate_action(self):
         self.check()
         self.canvas_widget.start_translate()
@@ -583,6 +629,11 @@ class MainWindow(QMainWindow):
         self.check()
         self.canvas_widget.start_clip('Liang-Barsky')
         self.statusBar().showMessage('Liang-Barsky算法裁剪')
+
+    def delete_action(self):
+        self.check()
+        self.canvas_widget.start_delete()
+        self.statusBar().showMessage('删除图元')
 
 
 if __name__ == '__main__':
