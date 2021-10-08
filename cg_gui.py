@@ -372,15 +372,15 @@ class MainWindow(QMainWindow):
         self.list_widget.setMinimumWidth(200)
 
         # 使用QGraphicsView作为画布
+        self.length = 1500
+        self.height = 1000
         self.scene = QGraphicsScene(self)
-        self.scene.setSceneRect(0, 0, 1500, 1000)
+        self.scene.setSceneRect(0, 0, self.length, self.height)
         self.canvas_widget = MyCanvas(self.scene, self)
         self.canvas_widget.setFixedSize(1500, 1000)
         self.canvas_widget.main_window = self
         self.canvas_widget.list_widget = self.list_widget
         self.changed = False
-        self.length = 1500
-        self.height = 1000
 
         # 设置菜单栏
         menubar = self.menuBar()
