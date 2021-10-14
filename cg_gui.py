@@ -525,18 +525,19 @@ class MainWindow(QMainWindow):
 
     def reset_canvas_action(self):
         self.check()
-        self.length,_ = QInputDialog.getInt(self,'input','length',1000,500,2000)
-        self.height,_ = QInputDialog.getInt(self,'input','height',800,300,1500)
-        self.list_widget.clearSelection()
-        self.list_widget.clear()
-        self.canvas_widget.clear_selection()
-        self.canvas_widget.item_dict.clear()
-        self.canvas_widget.scene().clear()
-        self.item_cnt = 0
-        self.changed = False
-        self.canvas_widget.status = ''
-        self.scene.setSceneRect(0, 0, self.length, self.height)
-        self.canvas_widget.setFixedSize(self.length,self.height)
+        self.length,flag1 = QInputDialog.getInt(self,'input','length',1000,500,2000)
+        self.height,flag2 = QInputDialog.getInt(self,'input','height',800,300,1500)
+        if flag1 and flag2:
+            self.list_widget.clearSelection()
+            self.list_widget.clear()
+            self.canvas_widget.clear_selection()
+            self.canvas_widget.item_dict.clear()
+            self.canvas_widget.scene().clear()
+            self.item_cnt = 0
+            self.changed = False
+            self.canvas_widget.status = ''
+            self.scene.setSceneRect(0, 0, self.length, self.height)
+            self.canvas_widget.setFixedSize(self.length,self.height)
 
     def get_id(self,flag=True):
         if not flag:
