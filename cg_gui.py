@@ -143,7 +143,7 @@ class MyCanvas(QGraphicsView):
                     self.item_dict[self.temp_id] = self.temp_item
                     self.list_widget.addItem(self.temp_id)
                     self.finish_draw()
-                    self.status = ''
+                    #self.status = ''
                 else:
                     self.temp_item.p_list.append([x, y])
             self.main_window.changed=True
@@ -297,27 +297,18 @@ class MyItem(QGraphicsItem):
             item_pixels = alg.draw_line(self.p_list, self.algorithm)
             for p in item_pixels:
                 painter.drawPoint(*p)
-            if self.selected:
-                painter.setPen(QColor(255, 0, 0))
-                painter.drawRect(self.boundingRect())
 
         elif self.item_type == 'polygon':
             #pass
             item_pixels = alg.draw_polygon(self.p_list, self.algorithm)
             for p in item_pixels:
                 painter.drawPoint(*p)
-            if self.selected:
-                painter.setPen(QColor(255, 0, 0))
-                painter.drawRect(self.boundingRect())
 
         elif self.item_type == 'ellipse':
             #pass
             item_pixels = alg.draw_ellipse(self.p_list)
             for p in item_pixels:
                 painter.drawPoint(*p)
-            if self.selected:
-                painter.setPen(QColor(255, 0, 0))
-                painter.drawRect(self.boundingRect())
 
         elif self.item_type == 'curve':
             #pass
@@ -326,16 +317,14 @@ class MyItem(QGraphicsItem):
                 painter.drawPoint(*p)
             for p in self.p_list:
                 painter.drawPoint(*p)
-            if self.selected:
-                painter.setPen(QColor(255, 0, 0))
-                painter.drawRect(self.boundingRect())
 
         elif self.item_type == 'pen':
             for p in self.p_list:
                 painter.drawPoint(*p)
-            if self.selected:
-                painter.setPen(QColor(255, 0, 0))
-                painter.drawRect(self.boundingRect())
+
+        if self.selected:
+            painter.setPen(QColor(255, 0, 0))
+            painter.drawRect(self.boundingRect())
 
     def boundingRect(self) -> QRectF:
         if self.item_type == 'line' or self.item_type == 'ellipse':
