@@ -136,8 +136,9 @@ class MyCanvas(QGraphicsView):
             self.main_window.changed=True
         elif self.status == 'polygon' or self.status == 'curve':
             if self.temp_item is None:
-                self.temp_item = MyItem(self.temp_id, self.status, [[x, y]], self.temp_algorithm, self.color)
-                self.scene().addItem(self.temp_item)
+                if event.button() == Qt.LeftButton:
+                    self.temp_item = MyItem(self.temp_id, self.status, [[x, y]], self.temp_algorithm, self.color)
+                    self.scene().addItem(self.temp_item)
             else:
                 if event.button() == Qt.RightButton:
                     self.item_dict[self.temp_id] = self.temp_item
