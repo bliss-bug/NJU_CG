@@ -201,7 +201,7 @@ class MyCanvas(QGraphicsView):
                 dx,dy=x-int(self.pre_pos.x()),y-int(self.pre_pos.y())
                 self.temp_item.p_list = alg.translate(self.pre_list,dx,dy)
         elif self.status == 'rotate':
-            if self.selected_id != '':
+            if self.selected_id != '' and self.temp_item.item_type != 'ellipse':
                 pre_x,pre_y=int(self.pre_pos.x()),int(self.pre_pos.y())
                 #len1=math.sqrt((pre_x-self.center[0])**2 + (pre_y-self.center[1])**2)
                 #len2=math.sqrt((x-self.center[0])**2 + (y-self.center[1])**2)
