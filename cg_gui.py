@@ -506,9 +506,11 @@ class MainWindow(QMainWindow):
                     pixels = alg.draw_ellipse(item.p_list)
                 elif item.item_type == 'curve':
                     pixels = alg.draw_curve(item.p_list,item.algorithm)
+                elif item.item_type == 'pen':
+                    pixels = item.p_list
                 for x, y in pixels:
-                    color=np.zeros(3, np.uint8)
-                    canvas[y, x] = color
+                    color=[int(item.color.red()),int(item.color.green()),int(item.color.blue())]
+                    canvas[y, x] = np.array(np.array(color))
             if path[0] != '':
                 Image.fromarray(canvas).save(path[0], 'bmp')
                 self.changed=False
