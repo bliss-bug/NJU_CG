@@ -509,8 +509,9 @@ class MainWindow(QMainWindow):
                 elif item.item_type == 'pen':
                     pixels = item.p_list
                 for x, y in pixels:
-                    color=[int(item.color.red()),int(item.color.green()),int(item.color.blue())]
-                    canvas[y, x] = np.array(color)
+                    if x>=0 and x<self.length and y>=0 and y<self.height:
+                        color=[int(item.color.red()),int(item.color.green()),int(item.color.blue())]
+                        canvas[y, x] = np.array(color)
             if path[0] != '':
                 Image.fromarray(canvas).save(path[0], 'bmp')
                 self.changed=False
