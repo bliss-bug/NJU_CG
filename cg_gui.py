@@ -518,8 +518,8 @@ class MainWindow(QMainWindow):
 
     def reset_canvas_action(self):
         self.check()
-        self.length,flag1 = QInputDialog.getInt(self,'input','length',1000,500,2000)
-        self.height,flag2 = QInputDialog.getInt(self,'input','height',800,300,1500)
+        self.length,flag1 = QInputDialog.getInt(self,'input','length',1500,500,2000)
+        self.height,flag2 = QInputDialog.getInt(self,'input','height',1000,300,1500)
         if flag1 and flag2:
             self.list_widget.clearSelection()
             self.list_widget.clear()
