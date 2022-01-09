@@ -320,8 +320,10 @@ class MyItem(QGraphicsItem):
                 painter.drawPoint(*p)
 
         elif self.item_type == 'pen':
-            for p in self.p_list:
-                painter.drawPoint(*p)
+            for i in range(len(self.p_list)-1):
+                item_pixels = alg.draw_line(self.p_list[i:i+2],'Bresenham')
+                for p in item_pixels:
+                    painter.drawPoint(*p)
 
         if self.selected:
             painter.setPen(QColor(255, 0, 0))
